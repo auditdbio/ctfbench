@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+    <!-- Background -->
+    <rect width="800" height="800" fill="#ffffff"/>
+    
+    <!-- Colored regions -->
+    <g opacity="0.2">
+        <!-- Ideal (top-left) -->
+        <rect x="100" y="100" width="300" height="300" fill="#4CAF50"/>
+        <!-- Diligent but Noisy (top-right) -->
+        <rect x="400" y="100" width="300" height="300" fill="#2196F3"/>
+        <!-- Conservative (bottom-left) -->
+        <rect x="100" y="400" width="300" height="300" fill="#FFC107"/>
+        <!-- Unreliable (bottom-right) -->
+        <rect x="400" y="400" width="300" height="300" fill="#F44336"/>
+    </g>
+
+    <!-- Axes -->
+    <g stroke="#000000" stroke-width="2">
+        <line x1="100" y1="700" x2="700" y2="700" />
+        <line x1="100" y1="700" x2="100" y2="100" />
+        <!-- X-axis arrows -->
+        <polygon points="705,700 690,695 690,705" fill="black"/>
+        <!-- Y-axis arrows -->
+        <polygon points="100,95 95,110 105,110" fill="black"/>
+    </g>
+
+    <!-- Labels -->
+    <g font-family="Arial, sans-serif">
+        <!-- Axis labels -->
+        <text x="400" y="750" text-anchor="middle" font-size="24">OI (Overreporting Index)</text>
+        <text x="40" y="400" text-anchor="middle" font-size="24" transform="rotate(-90, 40, 400)">VDR (Vulnerability Detection Rate)</text>
+        
+        <!-- Axis values -->
+        <text x="100" y="730" text-anchor="middle" font-size="16">0.0</text>
+        <text x="700" y="730" text-anchor="middle" font-size="16">1.0</text>
+        
+        <text x="70" y="705" text-anchor="end" font-size="16">0.0</text>
+        <text x="70" y="105" text-anchor="end" font-size="16">1.0</text>
+
+        <!-- Region labels -->
+        <g font-size="20" font-weight="bold">
+            <text x="250" y="250" text-anchor="middle" fill="#1B5E20">Optimal</text>
+            <text x="550" y="250" text-anchor="middle" fill="#0D47A1">Diligent but Noisy</text>
+            <text x="250" y="550" text-anchor="middle" fill="#795548">Conservative</text>
+            <text x="550" y="550" text-anchor="middle" fill="#B71C1C">Unreliable</text>
+        </g>
+    </g>
+</svg>
