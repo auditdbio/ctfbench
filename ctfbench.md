@@ -37,6 +37,40 @@ $$OI = \frac{FP}{TP+FP}$$
 
 The combination of VDR and OI provides a holistic view of an auditor's quality. Each agent (model) can be represented as a point on a plane, with VDR plotted on one axis and OI on the other. This representation visually demonstrates the balance between **sensitivity** (the ability to detect as many vulnerabilities as possible) and **precision** (the ability to avoid flagging non-existent issues). **The ideal** algorithm detects all vulnerabilities (VDR = 1.0) with no false alarms (OI = 0.0) – graphically, this is the point in the top left corner of the plane. In practice, models typically achieve a compromise between these metrics. Analyzing the positions of these points allows for a direct comparison of auditors: if one model has both a higher VDR and a lower OI than another, it *dominates* and is objectively superior. In cases where one model has a higher VDR but the other a lower OI, the VDR–OI plane allows stakeholders to evaluate which approach is preferable depending on the needs: sometimes it is more important to catch as many bugs as possible (even at the cost of extra warnings), while in other situations it is crucial to minimize noise so as not to distract developers with false alarms. Our benchmark provides a uniform measurement protocol: all models are subjected to the same test cases, and the metrics are calculated automatically, eliminating subjectivity. This approach aligns with researchers' call for a **systematic evaluation of LLM capabilities in detecting vulnerabilities** using standardized datasets ([Understanding the Effectiveness of Large Language Models in Detecting Security Vulnerabilities](https://arxiv.org/html/2311.16169v3#:~:text=To%20develop%20LLM,understanding%20tasks%20%5B%2052)). CTFBench brings this principle to life in the context of smart contracts.
 
+## Automated Vulnerability Verification using DeepSeek R1
+
+To minimize the human factor in the evaluation of whether the injected vulnerability was detected, we integrate an open‐source model called **DeepSeek R1** into our benchmark. DeepSeek R1 is sufficiently advanced to make such determinations, and its model weights are publicly available. The model is supplied with both the synopsis of the injected vulnerability and the corresponding audit report, and it outputs a binary response: **YES** (indicating that the vulnerability was detected) or **NO**.
+
+To further reduce ambiguity in the model's judgments, we propose running DeepSeek R1 on each report for $N=3$ independent trials. In this setting, every occurrence of a **YES** result contributes a value of $1/N$, thereby averaging the outcome over multiple runs.
+
+Furthermore, to accurately assess the total number of triggered alerts, DeepSeek R1 is also employed to count the number of unique vulnerabilities reported. This counting is repeated for each of the $N$ runs, and the value from each run is divided by $N$ before being summed. In effect, this process yields averaged metrics of the vulnerability detections.
+
+Let $M$ be the number of vulnerable smart contracts in our test suite. For the $i$-th contract and the $j$-th run, let 
+
+$$d_{ij} \in \{0, 1\}$$ 
+
+denote the binary outcome (with $1$ indicating a **YES** response and $0$ indicating **NO**). Then, the number of true positives is given by:
+
+$$TP = \frac{\sum\limits_{ij} d_{ij}}{N}$$
+
+with the relationship 
+
+$$TP + FN = M,$$
+
+and the **Vulnerability Detection Rate (VDR)** is computed as:
+
+$$VDR = \frac{\sum\limits_{ij} d_{ij}}{NM}.$$
+
+Similarly, let $n_{ij}$ denote the result in the $i$-th contract on the $j$-th run when counting the number of unique vulnerabilities reported. Then, the number of false positives is defined as:
+
+$$FP = \frac{\sum\limits_{ij} n_{ij}}{N} - TP,$$
+
+and the **Overreporting Index (OI)** is calculated as:
+
+$$OI = \frac{FP}{TP + FP}.$$
+
+This multi-run approach ensures that the evaluation of vulnerability detection and overreporting is robust, reducing the influence of any single, potentially ambiguous result from DeepSeek R1.
+
 ---
 
 ## Typology of AI Auditors in the VDR–OI Space
