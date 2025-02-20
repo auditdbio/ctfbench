@@ -24,16 +24,15 @@ $$VDR = \frac{TP}{TP+FN}$$
 
   where *TP* is the number of detected vulnerabilities and *FN* is the number of missed vulnerabilities ([LLM-SmartAudit: Advanced Smart Contract Vulnerability Detection](https://arxiv.org/html/2410.09381v1#:~:text=To%20evaluate%20tool%E2%80%99s%20performance%2C%20we,Precision)). A VDR value of 1 (or 100%) means that the model detected all the injected bugs, whereas a value of 0.5 (50%) indicates that only half of the issues were detected.
 
-- **Overreporting Index (OI)** – an index of overreporting that characterizes the model's tendency to generate excessive alerts. We define OI as the proportion of alerts that do not correspond to the single, pre-defined defect in the test contract. This category includes:
-  - False positives,
-  - Additional true positives, if for any reason the reference contract contains more than one error (for example, due to human error),
-  - **Moderate errors** – cases in which the interpretation of a vulnerability is disputed among cybersecurity experts.
+- **Overreporting Index (OI)** – an index that quantifies the tendency of an AI auditor to trigger alerts on contracts that are known to be free of vulnerabilities.
 
-  Formally:  
-  
-$$OI = \frac{FP}{TP+FP}$$
+  In this revised approach, to evaluate the false positive rate, a separate set of contracts—guaranteed to have no vulnerabilities—is used. Every alert triggered on these error-free contracts is by definition a false positive.
 
-  where *FP* includes both standard false alarms as well as disputed (moderate) errors and extra true signals. Since the reference contracts are deliberately designed with one known vulnerability, the likelihood of such additional alerts is quite low, making OI a reliable and informative metric.
+  Let $M$ be the number of contracts in this error-free set, and let $FP$ be the total number of alerts triggered by the auditor on this set. (Here, $FP$ denotes the false positive count: every alert triggered on a contract that is known to be free of vulnerabilities is considered a false positive.) Then, the Overreporting Index is computed as:
+
+  $$OI = 1 - \frac{M}{M+FP}.$$
+
+  With this formulation, an auditor that produces no alerts on benign contracts (i.e. $FP = 0$) achieves the optimal $OI$ of 0. As the number of false alerts increases, $OI$ approaches 1.
 
 The combination of VDR and OI provides a holistic view of an auditor's quality. Each agent (model) can be represented as a point on a plane, with VDR plotted on one axis and OI on the other. This representation visually demonstrates the balance between **sensitivity** (the ability to detect as many vulnerabilities as possible) and **precision** (the ability to avoid flagging non-existent issues). **The ideal** algorithm detects all vulnerabilities (VDR = 1.0) with no false alarms (OI = 0.0) – graphically, this is the point in the top left corner of the plane. In practice, models typically achieve a compromise between these metrics. Analyzing the positions of these points allows for a direct comparison of auditors: if one model has both a higher VDR and a lower OI than another, it *dominates* and is objectively superior. In cases where one model has a higher VDR but the other a lower OI, the VDR–OI plane allows stakeholders to evaluate which approach is preferable depending on the needs: sometimes it is more important to catch as many bugs as possible (even at the cost of extra warnings), while in other situations it is crucial to minimize noise so as not to distract developers with false alarms. Our benchmark provides a uniform measurement protocol: all models are subjected to the same test cases, and the metrics are calculated automatically, eliminating subjectivity. This approach aligns with researchers' call for a **systematic evaluation of LLM capabilities in detecting vulnerabilities** using standardized datasets ([Understanding the Effectiveness of Large Language Models in Detecting Security Vulnerabilities](https://arxiv.org/html/2311.16169v3#:~:text=To%20develop%20LLM,understanding%20tasks%20%5B%2052)). CTFBench brings this principle to life in the context of smart contracts.
 
@@ -63,11 +62,11 @@ $$VDR = \frac{\sum\limits_{ij} d_{ij}}{NM}.$$
 
 Similarly, let $n_{ij}$ denote the result in the $i$-th contract on the $j$-th run when counting the number of unique vulnerabilities reported. Then, the number of false positives is defined as:
 
-$$FP = \frac{\sum\limits_{ij} n_{ij}}{N} - TP,$$
+$$FP = \frac{\sum\limits_{ij} n_{ij}}{N},$$
 
 and the **Overreporting Index (OI)** is calculated as:
 
-$$OI = \frac{FP}{TP + FP}.$$
+$$OI = 1 - \frac{M}{M+FP}.$$
 
 This multi-run approach ensures that the evaluation of vulnerability detection and overreporting is robust, reducing the influence of any single, potentially ambiguous result from DeepSeek R1.
 
