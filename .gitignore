@@ -1,2 +1,4 @@
 *.ignore.*
 *.pdf
+notebook
+.env
