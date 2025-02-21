@@ -9,5 +9,6 @@ dependencies = [
     "matplotlib>=3.10.0",
     "numpy>=2.2.3",
     "openai>=1.63.2",
+    "pyqt5>=5.15.11",
     "python-dotenv>=1.0.1",
 ]
