@@ -32,6 +32,16 @@ $$\text{OI} = \frac{\text{FP}}{\text{LoC}}$$
 
 The combination of VDR and OI provides a holistic view of an auditor's quality. Each agent (model) can be represented as a point on a plane, with \text{VDR} plotted on one axis and \text{OI} on the other. This representation visually demonstrates the balance between **sensitivity** (the ability to detect as many vulnerabilities as possible) and **selectivity** (the ability to avoid flagging non-existent issues). **The ideal** algorithm detects all vulnerabilities ($\text{VDR} = 1.0$) with no false alarms ($\text{OI} = 0.0$) – graphically, this is the point in the top left corner of the plane. In practice, models typically achieve a compromise between these metrics. Analyzing the positions of these points allows for a direct comparison of auditors: if one model has both a higher \text{VDR} and a lower \text{OI} than another, it *dominates* and is objectively superior. In cases where one model has a higher \text{VDR} but the other a lower \text{OI}, the VDR–OI plane allows stakeholders to evaluate which approach is preferable depending on the needs: sometimes it is more important to catch as many bugs as possible (even at the cost of extra warnings), while in other situations it is crucial to minimize noise so as not to distract developers with false alarms. Our benchmark provides a uniform measurement protocol: all models are subjected to the same test cases, and the metrics are calculated automatically, eliminating subjectivity. This approach aligns with researchers' call for a **systematic evaluation of LLM capabilities in detecting vulnerabilities** using standardized datasets [4]. CTFBench brings this principle to life in the context of smart contracts.
 
+---
+
+## Our results
+
+
+![Performance of AI auditors in the VDR–OI space](assets/performance.svg)
+
+
+---
+
 ## Automated Vulnerability Verification using DeepSeek R1
 
 To minimize the human factor in the evaluation of whether the injected vulnerability was detected, we integrate an open-source model called **DeepSeek R1** into our benchmark. DeepSeek R1 is sufficiently advanced to make such determinations, and its model weights are publicly available. The model is supplied with both the synopsis of the injected vulnerability and the corresponding audit report, and it outputs a binary response: **YES** (indicating that the vulnerability was detected) or **NO**.

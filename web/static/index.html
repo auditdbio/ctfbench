@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTFBench - Benchmarking AI Smart Contract Auditors</title>
+    <meta name="description" content="CTFBench is a benchmark for evaluating AI smart contract auditors based on Vulnerability Detection Rate and Overreporting Index.">
+    <meta name="keywords" content="AI, smart contracts, auditing, benchmark, VDR, OI">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+        }
+
+        section {
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #e0e0e0;
+        }
+
+        #graph {
+            width: 600px;
+            height: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        footer a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.2em;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+    <script src="scatterplot.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🪲 CTFBench 🚩</h1>
+        </header>
+
+        <section>
+            <h2>About CTFBench</h2>
+            <p>CTFBench is a benchmark for evaluating AI smart contract auditors. It uses a set of test cases where each smart contract has exactly one known vulnerability. The benchmark calculates two key metrics:</p>
+            <ul>
+                <li><strong>Vulnerability Detection Rate (VDR)</strong>: The proportion of detected vulnerabilities, indicating how many of the known vulnerabilities the AI auditor successfully identifies.</li>
+                <li><strong>Overreporting Index (OI)</strong>: The number of false positives reported per line of code in contracts that are known to be free of vulnerabilities, measuring the auditor's tendency to raise unnecessary alerts.</li>
+            </ul>
+            <p>By plotting these metrics on a graph, CTFBench allows for a visual comparison of different AI auditors, helping developers and researchers assess their effectiveness and trade-offs.</p>
+        </section>
+
+        <section>
+            <h2>Benchmark Results for AI Smart Contract Auditors</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>VDR</th>
+                            <th>OI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="https://savant.chat/">savant.chat</a></td>
+                            <td>0.857</td>
+                            <td>0.033</td>
+                        </tr>
+                        <tr>
+                            <td>grok 3 thinking</td>
+                            <td>0.524</td>
+                            <td>0.037</td>
+                        </tr>
+                        <tr>
+                            <td><a href="https://www.armur.ai/">ARMUR</a></td>
+                            <td>0.524</td>
+                            <td>0.090</td>
+                        </tr>
+                        <tr>
+                            <td>openai_o3_mini_high</td>
+                            <td>0.429</td>
+                            <td>0.056</td>
+                        </tr>
+                        <tr>
+                            <td>openai_o3_mini</td>
+                            <td>0.429</td>
+                            <td>0.064</td>
+                        </tr>
+                        <tr>
+                            <td>deepseek_r1</td>
+                            <td>0.429</td>
+                            <td>0.070</td>
+                        </tr>
+                        <tr>
+                            <td><a href="http://smartcontracts.code-genie.ai/">Code Genie AI</a></td>
+                            <td>0.333</td>
+                            <td>0.023</td>
+                        </tr>
+                        <tr>
+                            <td>slither</td>
+                            <td>0.238</td>
+                            <td>0.130</td>
+                        </tr>
+                        <tr>
+                            <td><a href="https://shield.quillai.network/">QuillShield</a></td>
+                            <td>0.143</td>
+                            <td>0.009</td>
+                        </tr>
+                        <tr>
+                            <td><a href="https://aiaegis.org/">Aegis</a></td>
+                            <td>0.143</td>
+                            <td>0.118</td>
+                        </tr>
+                        <tr>
+                            <td><a href="https://auditone.io/">AuditOne</a></td>
+                            <td>0.095</td>
+                            <td>0.028</td>
+                        </tr>
+                        <tr>
+                            <td><a href="https://scau.pro/">SCAU</a></td>
+                            <td>0.000</td>
+                            <td>0.051</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2>Performance Graph</h2>
+            <div id="graph"></div>
+        </section>
+
+        <footer>
+            <a href="ctfbench.pdf" target="_blank">Read the Article</a> | 
+            <a href="https://discord.gg/phQBMYmR" target="_blank">Join AuditDB Community Discord</a>
+        </footer>
+
+        <script>
+const plotData = [
+    {"name": "ARMUR", "x": 0.08992248062015504, "y": 0.5238095238095238},
+    {"name": "Aegis", "x": 0.11782945736434108, "y": 0.14285714285714285},
+    {"name": "deepseek_r1", "x": 0.06976744186046512, "y": 0.42857142857142855},
+    {"name": "openai_o3_mini", "x": 0.06356589147286822, "y": 0.42857142857142855},
+    {"name": "savant.chat", "x": 0.03255813953488372, "y": 0.8571428571428571},
+    {"name": "openai_o3_mini_high", "x": 0.05581395348837209, "y": 0.42857142857142855},
+    {"name": "AuditOne", "x": 0.027906976744186046, "y": 0.09523809523809523},
+    {"name": "QuillShield", "x": 0.009302325581395349, "y": 0.14285714285714285},
+    {"name": "SCAU", "x": 0.05116279069767442, "y": 0},
+    {"name": "Code Genie AI", "x": 0.023255813953488372, "y": 0.3333333333333333},
+    {"name": "grok 3 thinking", "x": 0.037209302325581395, "y": 0.5238095238095238},
+    {"name": "slither", "x": 0.13023255813953488, "y": 0.23809523809523808}
+];
+
+// Example call to create the plot in a specific DOM element
+document.addEventListener("DOMContentLoaded", () => {
+    
+    // Call the function
+    createScatterPlot({
+        containerId: "graph",
+        data: plotData,
+        xLabel: "OI",
+        yLabel: "VDR",
+        width: 600,
+        height: 600,
+        margin: 50
+    });
+});
+        </script>
+    </div>
+</body>
+</html>

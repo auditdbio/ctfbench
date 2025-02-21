@@ -1,0 +1,553 @@
+function createScatterPlot({
+    containerId, // ID of the DOM element to place the plot in
+    data, // Array of {name, x, y} objects
+    xLabel = "X", // X-axis label
+    yLabel = "Y", // Y-axis label
+    width = 800, // Default width
+    height = 600, // Default height
+    margin = 50 // Margin around the plot
+}) {
+    // Select the container
+    const container = document.getElementById(containerId) || document.body;
+    container.innerHTML = ""; // Clear existing content
+
+    // Create SVG
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "100%"); // Adaptive width
+    svg.setAttribute("height", "100%"); // Adaptive height
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`); // Maintain aspect ratio
+    container.appendChild(svg);
+
+    // Calculate dimensions dynamically
+    function getDimensions() {
+        const rect = container.getBoundingClientRect();
+        return { width: rect.width, height: rect.height };
+    }
+
+    // Coordinate ranges
+    const xMin = 0;
+    const xMax = Math.max(...data.map(d => d.x)) * 1.1; // max(x) * 1.1
+    const yMin = 0;
+    const yMax = 1; // Fixed maximum Y value
+
+    // Scaling functions
+    function xToPx(x) {
+        return margin + (x - xMin) / (xMax - xMin) * (width - 2 * margin);
+    }
+
+    function yToPx(y) {
+        return height - margin - (y - yMin) / (yMax - yMin) * (height - 2 * margin);
+    }
+
+    // Generate colors in HSV space with maximum separation
+    function generateColors(count) {
+        const colors = [];
+        const hueStep = 360 / count;
+        for (let i = 0; i < count; i++) {
+            const h = i * hueStep;
+            const s = 1;
+            const v = 0.7;
+            colors.push(hsvToRgb(h, s, v));
+        }
+        return colors;
+    }
+
+    function hsvToRgb(h, s, v) {
+        let r, g, b;
+        const i = Math.floor(h / 60);
+        const f = h / 60 - i;
+        const p = v * (1 - s);
+        const q = v * (1 - f * s);
+        const t = v * (1 - (1 - f) * s);
+        switch (i % 6) {
+            case 0: r = v, g = t, b = p; break;
+            case 1: r = q, g = v, b = p; break;
+            case 2: r = p, g = v, b = t; break;
+            case 3: r = p, g = q, b = v; break;
+            case 4: r = t, g = p, b = v; break;
+            case 5: r = v, g = p, b = q; break;
+        }
+        const rgb = {
+            r: Math.round(r * 255),
+            g: Math.round(g * 255),
+            b: Math.round(b * 255)
+        };
+        return `#${rgb.r.toString(16).padStart(2, '0')}${rgb.g.toString(16).padStart(2, '0')}${rgb.b.toString(16).padStart(2, '0')}`;
+    }
+
+    const colors = generateColors(data.length);
+
+    // Calculate adaptive grid step
+    function calculateStep(range) {
+        const targetSteps = 10;
+        const roughStep = range / targetSteps;
+        const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+        const normalizedStep = roughStep / magnitude;
+        let step = normalizedStep <= 1.5 ? 1 : normalizedStep <= 3 ? 2 : 5;
+        step *= magnitude;
+        const stepsCount = Math.floor(range / step);
+        if (stepsCount < 8) step /= 2;
+        else if (stepsCount > 12) step *= 2;
+        return step;
+    }
+
+    const xStep = calculateStep(xMax - xMin);
+    const yStep = calculateStep(yMax - yMin);
+    const xStepsCount = Math.floor(xMax / xStep) + 1;
+    const yStepsCount = Math.floor(yMax / yStep) + 1;
+
+    // Create tooltip elements
+    const tooltipGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    const tooltipBg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    tooltipBg.setAttribute("fill", "#333");
+    tooltipBg.setAttribute("rx", "3");
+    tooltipBg.setAttribute("opacity", "0.8");
+    tooltipBg.setAttribute("visibility", "hidden");
+    const tooltipText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    tooltipText.setAttribute("fill", "white");
+    tooltipText.setAttribute("font-size", "12px");
+    tooltipText.setAttribute("text-anchor", "start");
+    tooltipText.setAttribute("visibility", "hidden");
+    tooltipGroup.appendChild(tooltipBg);
+    tooltipGroup.appendChild(tooltipText);
+    svg.appendChild(tooltipGroup);
+
+    // Tooltip functions
+    function showTooltip(event, name, x, y) {
+        const coords = `${name}: (${x.toFixed(3)}, ${y.toFixed(3)})`;
+        tooltipText.textContent = coords;
+        const bbox = tooltipText.getBBox();
+        const padding = 5;
+        const offsetX = event.offsetX * (width / container.getBoundingClientRect().width);
+        const offsetY = event.offsetY * (height / container.getBoundingClientRect().height);
+        tooltipText.setAttribute("x", offsetX + 10);
+        tooltipText.setAttribute("y", offsetY - 5);
+        tooltipBg.setAttribute("x", offsetX + 5);
+        tooltipBg.setAttribute("y", offsetY - bbox.height - padding / 2);
+        tooltipBg.setAttribute("width", bbox.width + padding * 2);
+        tooltipBg.setAttribute("height", bbox.height + padding);
+        tooltipText.setAttribute("visibility", "visible");
+        tooltipBg.setAttribute("visibility", "visible");
+    }
+
+    function moveTooltip(event) {
+        const bbox = tooltipText.getBBox();
+        const padding = 5;
+        const offsetX = event.offsetX * (width / container.getBoundingClientRect().width);
+        const offsetY = event.offsetY * (height / container.getBoundingClientRect().height);
+        tooltipText.setAttribute("x", offsetX + 10);
+        tooltipText.setAttribute("y", offsetY - 5);
+        tooltipBg.setAttribute("x", offsetX + 5);
+        tooltipBg.setAttribute("y", offsetY - bbox.height - padding / 2);
+    }
+
+    function hideTooltip() {
+        tooltipText.setAttribute("visibility", "hidden");
+        tooltipBg.setAttribute("visibility", "hidden");
+    }
+
+    // Draw axes
+    const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    xAxis.setAttribute("x1", margin);
+    xAxis.setAttribute("y1", height - margin);
+    xAxis.setAttribute("x2", width - margin);
+    xAxis.setAttribute("y2", height - margin);
+    xAxis.setAttribute("stroke", "black");
+    svg.appendChild(xAxis);
+
+    const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    yAxis.setAttribute("x1", margin);
+    yAxis.setAttribute("y1", margin);
+    yAxis.setAttribute("x2", margin);
+    yAxis.setAttribute("y2", height - margin);
+    yAxis.setAttribute("stroke", "black");
+    svg.appendChild(yAxis);
+
+    // Draw arrows on axes
+    const xArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    xArrow.setAttribute("d", `M${width - margin - 10},${height - margin - 5} L${width - margin},${height - margin} L${width - margin - 10},${height - margin + 5}`);
+    xArrow.setAttribute("fill", "black");
+    svg.appendChild(xArrow);
+
+    const yArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    yArrow.setAttribute("d", `M${margin - 5},${margin + 10} L${margin},${margin} L${margin + 5},${margin + 10}`);
+    yArrow.setAttribute("fill", "black");
+    svg.appendChild(yArrow);
+
+    // Label axes
+    const xLabelElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    xLabelElement.setAttribute("x", width - margin / 2);
+    xLabelElement.setAttribute("y", height - margin / 2);
+    xLabelElement.setAttribute("text-anchor", "middle");
+    xLabelElement.textContent = xLabel;
+    svg.appendChild(xLabelElement);
+
+    const yLabelElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    yLabelElement.setAttribute("x", margin / 2);
+    yLabelElement.setAttribute("y", margin / 2);
+    yLabelElement.setAttribute("text-anchor", "middle");
+    yLabelElement.setAttribute("transform", `rotate(-90, ${margin / 2}, ${margin / 2})`);
+    yLabelElement.textContent = yLabel;
+    svg.appendChild(yLabelElement);
+
+    // Draw grid and label values
+    for (let i = 0; i < xStepsCount; i++) {
+        const value = i * xStep;
+        const x = xToPx(value);
+        if (x <= width - margin) {
+            const gridLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            gridLine.setAttribute("x1", x);
+            gridLine.setAttribute("y1", margin);
+            gridLine.setAttribute("x2", x);
+            gridLine.setAttribute("y2", height - margin);
+            gridLine.setAttribute("stroke", "lightgray");
+            gridLine.setAttribute("stroke-dasharray", "5,5");
+            svg.appendChild(gridLine);
+
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", x);
+            text.setAttribute("y", height - margin + 15);
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("font-size", "10px");
+            text.textContent = value.toFixed(2);
+            svg.appendChild(text);
+        }
+    }
+    for (let i = 0; i < yStepsCount; i++) {
+        const value = i * yStep;
+        const y = yToPx(value);
+        if (y >= margin) {
+            const gridLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            gridLine.setAttribute("x1", margin);
+            gridLine.setAttribute("y1", y);
+            gridLine.setAttribute("x2", width - margin);
+            gridLine.setAttribute("y2", y);
+            gridLine.setAttribute("stroke", "lightgray");
+            gridLine.setAttribute("stroke-dasharray", "5,5");
+            svg.appendChild(gridLine);
+
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", margin - 10);
+            text.setAttribute("y", y + 3);
+            text.setAttribute("text-anchor", "end");
+            text.setAttribute("font-size", "10px");
+            text.textContent = value.toFixed(2);
+            svg.appendChild(text);
+        }
+    }
+
+    // Possible positions for labels
+    const positions = [
+        { name: 'right', calc: (px, py, w, h) => ({x: px + 15, y: py - h / 2}) },
+        { name: 'left', calc: (px, py, w, h) => ({x: px - 15 - w, y: py - h / 2}) },
+        { name: 'top', calc: (px, py, w, h) => ({x: px - w / 2, y: py - 15 - h}) },
+        { name: 'bottom', calc: (px, py, w, h) => ({x: px - w / 2, y: py + 15}) },
+        { name: 'top-right', calc: (px, py, w, h) => ({x: px + 15, y: py - 15 - h}) },
+        { name: 'top-left', calc: (px, py, w, h) => ({x: px - 15 - w, y: py - 15 - h}) },
+        { name: 'bottom-right', calc: (px, py, w, h) => ({x: px + 15, y: py + 15}) },
+        { name: 'bottom-left', calc: (px, py, w, h) => ({x: px - 15 - w, y: py + 15}) }
+    ];
+
+    // Margins and gap
+    const padding = 5;
+    const labelGap = 10;
+    const pointRadius = 4;
+
+    // Font properties
+    const fontFamily = "Arial";
+    const fontSize = "12px";
+
+    // Measure text size
+    function getTextSize(text) {
+        const tempText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        tempText.setAttribute("font-family", fontFamily);
+        tempText.setAttribute("font-size", fontSize);
+        tempText.textContent = text;
+        svg.appendChild(tempText);
+        const bbox = tempText.getBBox();
+        svg.removeChild(tempText);
+        return {width: bbox.width, height: bbox.height};
+    }
+
+    // Check intersection of rectangles with gap
+    function intersectsWithGap(rect1, rect2) {
+        const gap = labelGap;
+        return rect1.x < rect2.x + rect2.width + gap &&
+               rect1.x + rect1.width + gap > rect2.x &&
+               rect1.y < rect2.y + rect2.height + gap &&
+               rect1.y + rect1.height + gap > rect2.y;
+    }
+
+    // Check intersection of rectangle with point
+    function intersectsPoint(rect, pointX, pointY) {
+        const gap = labelGap + pointRadius;
+        return rect.x < pointX + gap &&
+               rect.x + rect.width > pointX - gap &&
+               rect.y < pointY + gap &&
+               rect.y + rect.height > pointY - gap;
+    }
+
+    // Check intersection of line with rectangle
+    function lineIntersectsRect(x1, y1, x2, y2, rect) {
+        const {x, y, width, height} = rect;
+        const left = x;
+        const right = x + width;
+        const top = y;
+        const bottom = y + height;
+
+        function lineIntersectLine(x1, y1, x2, y2, x3, y3, x4, y4) {
+            const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+            if (denom === 0) return false;
+            const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+            const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+            return t > 0 && t < 1 && u > 0 && u < 1;
+        }
+
+        return lineIntersectLine(x1, y1, x2, y2, left, top, right, top) ||
+               lineIntersectLine(x1, y1, x2, y2, right, top, right, bottom) ||
+               lineIntersectLine(x1, y1, x2, y2, right, bottom, left, bottom) ||
+               lineIntersectLine(x1, y1, x2, y2, left, bottom, left, top);
+    }
+
+    // Check if rectangle is within bounds
+    function isWithinBounds(rect) {
+        return rect.x >= margin &&
+               rect.x + rect.width <= width - margin &&
+               rect.y >= margin &&
+               rect.y + rect.height <= height - margin;
+    }
+
+    // Calculate intersection area of rectangles
+    function intersectionArea(rect1, rect2) {
+        const xOverlap = Math.max(0, Math.min(rect1.x + rect1.width, rect2.x + rect2.width) - Math.max(rect1.x, rect2.x));
+        const yOverlap = Math.max(0, Math.min(rect1.y + rect1.height, rect2.y + rect2.height) - Math.max(rect1.y, rect2.y));
+        return xOverlap * yOverlap;
+    }
+
+    // Place labels
+    const placedRects = [];
+    const labelPositions = [];
+
+    data.forEach((d, i) => {
+        const name = d.name;
+        const pointPxX = xToPx(d.x);
+        const pointPxY = yToPx(d.y);
+        const color = colors[i];
+        const textSize = getTextSize(name);
+        const rectW = textSize.width + 2 * padding;
+        const rectH = textSize.height + 2 * padding;
+
+        let bestPosition = null;
+        let minCost = Infinity;
+
+        // Check all possible positions
+        positions.forEach(pos => {
+            const {x: rectX, y: rectY} = pos.calc(pointPxX, pointPxY, rectW, rectH);
+            const candidateRect = {x: rectX, y: rectY, width: rectW, height: rectH};
+            let totalIntersection = 0;
+            let intersectsAnyPoint = false;
+            let lineIntersectsAnyRect = false;
+            let outOfBounds = !isWithinBounds(candidateRect);
+
+            placedRects.forEach(pr => {
+                totalIntersection += intersectionArea(candidateRect, pr);
+            });
+
+            data.forEach((otherD, j) => {
+                if (i !== j) {
+                    const otherPxX = xToPx(otherD.x);
+                    const otherPxY = yToPx(otherD.y);
+                    if (intersectsPoint(candidateRect, otherPxX, otherPxY)) {
+                        intersectsAnyPoint = true;
+                    }
+                }
+            });
+
+            const closestPoint = getClosestPointOnRect(pointPxX, pointPxY, candidateRect);
+            placedRects.forEach(pr => {
+                if (lineIntersectsRect(pointPxX, pointPxY, closestPoint.x, closestPoint.y, pr)) {
+                    lineIntersectsAnyRect = true;
+                }
+            });
+
+            const cost = totalIntersection + 
+                        (intersectsAnyPoint ? 10000 : 0) + 
+                        (lineIntersectsAnyRect ? 10000 : 0) + 
+                        (outOfBounds ? 20000 : 0);
+            if (cost < minCost) {
+                minCost = cost;
+                bestPosition = {rectX, rectY};
+            }
+        });
+
+        const {rectX, rectY} = bestPosition;
+        placedRects.push({x: rectX, y: rectY, width: rectW, height: rectH});
+        labelPositions.push({pointPxX, pointPxY, rectX, rectY, rectW, rectH, color, name, x: d.x, y: d.y});
+    });
+
+    // Iterative position correction with bounds enforcement
+    const maxIterations = 100;
+    let iteration = 0;
+    let hasOverlap = true;
+    while (hasOverlap && iteration < maxIterations) {
+        hasOverlap = false;
+        for (let i = 0; i < labelPositions.length; i++) {
+            const rect1 = labelPositions[i];
+            const closest1 = getClosestPointOnRect(rect1.pointPxX, rect1.pointPxY, rect1);
+
+            for (let j = i + 1; j < labelPositions.length; j++) {
+                const rect2 = labelPositions[j];
+                if (intersectsWithGap(rect1, rect2)) {
+                    hasOverlap = true;
+                    const dx = (rect1.rectX + rect1.rectW / 2) - (rect2.rectX + rect2.rectW / 2);
+                    const dy = (rect1.rectY + rect1.rectH / 2) - (rect2.rectY + rect2.rectH / 2);
+                    const angle = Math.atan2(dy, dx);
+                    const moveDist = 2;
+                    let newX1 = rect1.rectX + moveDist * Math.cos(angle);
+                    let newY1 = rect1.rectY + moveDist * Math.sin(angle);
+                    let newX2 = rect2.rectX - moveDist * Math.cos(angle);
+                    let newY2 = rect2.rectY - moveDist * Math.sin(angle);
+                    if (newX1 >= margin && newX1 + rect1.rectW <= width - margin &&
+                        newY1 >= margin && newY1 + rect1.rectH <= height - margin) {
+                        rect1.rectX = newX1;
+                        rect1.rectY = newY1;
+                    }
+                    if (newX2 >= margin && newX2 + rect2.rectW <= width - margin &&
+                        newY2 >= margin && newY2 + rect2.rectH <= height - margin) {
+                        rect2.rectX = newX2;
+                        rect2.rectY = newY2;
+                    }
+                }
+            }
+
+            data.forEach((d, j) => {
+                if (i !== j) {
+                    const pxX = xToPx(d.x);
+                    const pxY = yToPx(d.y);
+                    if (intersectsPoint(rect1, pxX, pxY)) {
+                        hasOverlap = true;
+                        const dx = (rect1.rectX + rect1.rectW / 2) - pxX;
+                        const dy = (rect1.rectY + rect1.rectH / 2) - pxY;
+                        const angle = Math.atan2(dy, dx);
+                        const moveDist = 2;
+                        let newX = rect1.rectX + moveDist * Math.cos(angle);
+                        let newY = rect1.rectY + moveDist * Math.sin(angle);
+                        if (newX >= margin && newX + rect1.rectW <= width - margin &&
+                            newY >= margin && newY + rect1.rectH <= height - margin) {
+                            rect1.rectX = newX;
+                            rect1.rectY = newY;
+                        }
+                    }
+                }
+            });
+
+            for (let j = 0; j < labelPositions.length; j++) {
+                if (i !== j) {
+                    const rect2 = labelPositions[j];
+                    if (lineIntersectsRect(rect1.pointPxX, rect1.pointPxY, closest1.x, closest1.y, rect2)) {
+                        hasOverlap = true;
+                        const dx = (rect1.rectX + rect1.rectW / 2) - (rect2.rectX + rect2.rectW / 2);
+                        const dy = (rect1.rectY + rect1.rectH / 2) - (rect2.rectY + rect2.rectH / 2);
+                        const angle = Math.atan2(dy, dx);
+                        const moveDist = 2;
+                        let newX = rect1.rectX + moveDist * Math.cos(angle);
+                        let newY = rect1.rectY + moveDist * Math.sin(angle);
+                        if (newX >= margin && newX + rect1.rectW <= width - margin &&
+                            newY >= margin && newY + rect1.rectH <= height - margin) {
+                            rect1.rectX = newX;
+                            rect1.rectY = newY;
+                        }
+                    }
+                }
+            }
+        }
+        iteration++;
+    }
+
+    // Find closest point on rectangle
+    function getClosestPointOnRect(px, py, rect) {
+        const {rectX, rectY, rectW, rectH} = rect;
+        const left = rectX;
+        const right = rectX + rectW;
+        const top = rectY;
+        const bottom = rectY + rectH;
+        let closestX, closestY;
+        if (px < left) closestX = left;
+        else if (px > right) closestX = right;
+        else closestX = px;
+        if (py < top) closestY = top;
+        else if (py > bottom) closestY = bottom;
+        else closestY = py;
+        if (px >= left && px <= right) closestX = px;
+        else if (py >= top && py <= bottom) closestY = py;
+        else {
+            const corners = [
+                {x: left, y: top},
+                {x: right, y: top},
+                {x: left, y: bottom},
+                {x: right, y: bottom}
+            ];
+            let minDist = Infinity;
+            corners.forEach(corner => {
+                const dist = Math.hypot(px - corner.x, py - corner.y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestX = corner.x;
+                    closestY = corner.y;
+                }
+            });
+        }
+        return {x: closestX, y: closestY};
+    }
+
+    // Render elements
+    labelPositions.forEach(lp => {
+        const closestPoint = getClosestPointOnRect(lp.pointPxX, lp.pointPxY, lp);
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", lp.pointPxX);
+        line.setAttribute("y1", lp.pointPxY);
+        line.setAttribute("x2", closestPoint.x);
+        line.setAttribute("y2", closestPoint.y);
+        line.setAttribute("stroke", lp.color);
+        line.setAttribute("stroke-width", "1");
+        svg.appendChild(line);
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", lp.pointPxX);
+        circle.setAttribute("cy", lp.pointPxY);
+        circle.setAttribute("r", pointRadius);
+        circle.setAttribute("fill", lp.color);
+        circle.addEventListener("mouseover", (e) => showTooltip(e, lp.name, lp.x, lp.y));
+        circle.addEventListener("mousemove", moveTooltip);
+        circle.addEventListener("mouseout", hideTooltip);
+        svg.appendChild(circle);
+
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", lp.rectX);
+        rect.setAttribute("y", lp.rectY);
+        rect.setAttribute("width", lp.rectW);
+        rect.setAttribute("height", lp.rectH);
+        rect.setAttribute("fill", "none");
+        rect.setAttribute("stroke", lp.color);
+        rect.setAttribute("rx", 3);
+        rect.setAttribute("ry", 3);
+        rect.addEventListener("mouseover", (e) => showTooltip(e, lp.name, lp.x, lp.y));
+        rect.addEventListener("mousemove", moveTooltip);
+        rect.addEventListener("mouseout", hideTooltip);
+        svg.appendChild(rect);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", lp.rectX + lp.rectW / 2);
+        text.setAttribute("y", lp.rectY + lp.rectH / 2);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "central");
+        text.setAttribute("font-family", fontFamily);
+        text.setAttribute("font-size", fontSize);
+        text.setAttribute("fill", lp.color);
+        text.textContent = lp.name;
+        text.addEventListener("mouseover", (e) => showTooltip(e, lp.name, lp.x, lp.y));
+        text.addEventListener("mousemove", moveTooltip);
+        text.addEventListener("mouseout", hideTooltip);
+        svg.appendChild(text);
+    });
+};
