@@ -1,0 +1,1 @@
+Collision attack in MerkleDrop allow to claim all tokens from the contract.

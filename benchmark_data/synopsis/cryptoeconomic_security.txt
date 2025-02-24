@@ -1,0 +1,1 @@
+Attacker can use flashloan to manipulate the price of the token and then mint unlimited tokens.

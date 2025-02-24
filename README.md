@@ -2,6 +2,31 @@
 
 CTFBench is a benchmark designed for evaluating AI-powered smart contract auditors. This repository contains the methodology, test contracts, and documentation to help developers assess the effectiveness of automated auditors using objective measures.
 
+## Testing Contracts and Reports
+
+check folder `benchmark_data` for the testing contracts and reports.
+
+## Reproducing the Results
+
+Set your openrouter api key in `.env` file.
+
+Run
+```bash
+python tools/bench_synopsis.py ./benchmark_data/synopsis ./benchmark_data/reports/with_errors/savant
+```
+
+You will get a number of synopsis matches in the reports for vulnerable contracts.
+
+
+
+Run
+
+```bash
+python tools/bench_zero_errors.py ./benchmark_data/reports/no_errors/savant
+```
+
+You will get a number of false positives or non-critical advices in the reports for non-vulnerable contracts.
+
 ## Overview
 
 In the current landscape, smart contract security tools struggle with a trade-off between detecting vulnerabilities and minimizing false positives. CTFBench addresses this challenge by introducing two key metrics:
