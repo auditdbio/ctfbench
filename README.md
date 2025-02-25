@@ -1,6 +1,6 @@
 # CTFBench
 
-CTFBench is a benchmark designed for evaluating AI-powered smart contract auditors. This repository contains the methodology, test contracts, and documentation to help developers assess the effectiveness of automated auditors using objective measures.
+CTFBench ( [ctfbench.com](https://ctfbench.com/) ) is a benchmark designed for evaluating AI-powered smart contract auditors. This repository contains the methodology, test contracts, and documentation to help developers assess the effectiveness of automated auditors using objective measures.
 
 ## Testing Contracts and Reports
 
