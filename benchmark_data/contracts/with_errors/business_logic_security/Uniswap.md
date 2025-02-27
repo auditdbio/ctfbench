@@ -1,1 +1,0 @@
-In `withdraw` function the transfer of the token is missing.
