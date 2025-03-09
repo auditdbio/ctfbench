@@ -137,7 +137,12 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td><a href="https://savant.chat/">savant.chat</a></td>
+                            <td><a href="https://savant.chat/">savant.chat v0.2</a></td>
+                            <td>0.952</td>
+                            <td>0.027</td>
+                        </tr>
+                        <tr>
+                            <td><a href="https://savant.chat/">savant.chat v0.1</a></td>
                             <td>0.857</td>
                             <td>0.033</td>
                         </tr>
@@ -219,14 +224,15 @@ const plotData = [
     {"name": "Aegis", "x": 0.11782945736434108, "y": 0.14285714285714285},
     {"name": "deepseek_r1", "x": 0.06976744186046512, "y": 0.42857142857142855},
     {"name": "openai_o3_mini", "x": 0.06356589147286822, "y": 0.42857142857142855},
-    {"name": "savant.chat", "x": 0.03255813953488372, "y": 0.8571428571428571},
+    {"name": "savant.chat v0.1", "x": 0.03255813953488372, "y": 0.8571428571428571},
     {"name": "openai_o3_mini_high", "x": 0.05581395348837209, "y": 0.42857142857142855},
     {"name": "AuditOne", "x": 0.027906976744186046, "y": 0.09523809523809523},
     {"name": "QuillShield", "x": 0.009302325581395349, "y": 0.14285714285714285},
     {"name": "SCAU", "x": 0.05116279069767442, "y": 0},
     {"name": "Code Genie AI", "x": 0.023255813953488372, "y": 0.3333333333333333},
     {"name": "grok 3 thinking", "x": 0.037209302325581395, "y": 0.5238095238095238},
-    {"name": "slither", "x": 0.13023255813953488, "y": 0.23809523809523808}
+    {"name": "slither", "x": 0.13023255813953488, "y": 0.23809523809523808},
+    {"name": "savant.chat v0.2", "x": 0.027, "y": 0.9523, "connectedTo": "savant.chat v0.1"}
 ];
 
 // Example call to create the plot in a specific DOM element
@@ -236,11 +242,11 @@ document.addEventListener("DOMContentLoaded", () => {
     createScatterPlot({
         containerId: "graph",
         data: plotData,
-        xLabel: "OI",
-        yLabel: "VDR",
+        xLabel: "Extra hints (including false positives) / Lines of code",
+        yLabel: "Found bugs / All bugs",
         width: 600,
         height: 600,
-        margin: 50
+        margin: 70
     });
 });
         </script>
